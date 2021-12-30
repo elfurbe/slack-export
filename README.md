@@ -25,6 +25,8 @@ token may be used as a parameters of this script.
 
 ## Dependencies
 
+Use `pip` to install all required dependencies:
+
 ```
 pip3 install -r requirements.txt
 ```
