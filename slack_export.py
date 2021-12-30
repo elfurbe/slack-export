@@ -1,3 +1,4 @@
+import copy
 import json
 import argparse
 import os
@@ -32,6 +33,42 @@ def getHistory(client, channelId, pageSize=100):
         else:
             break
 
+    messages.sort(key=lambda message: message['ts'])
+
+    # Expand threads
+    all_replies = []
+    for message in messages:
+        if ('reply_count' in message) and (message['reply_count'] > 0):
+            lastTimestamp = None
+            replies = []
+            while True:
+                response = client.conversations_replies(
+                    channel=channelId,
+                    latest=lastTimestamp,
+                    oldest=0,
+                    count=pageSize,
+                    ts=message['ts']
+                )
+
+                replies.extend(response['messages'])
+
+                if response['has_more']:
+                    lastTimestamp = messages[-1]['ts']  # -1 means last element in a list
+                    sleep(1)  # Respect the Slack API rate limit
+                else:
+                    break
+
+            # Fill 'replies' array
+            replies_array = []
+            for reply in replies[1:]:
+                replies_array.append({'user': reply['user'], 'ts': reply['ts']})
+                if ('subtype' in reply) and (reply['subtype'] == 'thread_broadcast'):
+                    continue
+                all_replies.append(reply)
+            message['replies'] = copy.deepcopy(replies_array)
+    messages.extend(all_replies)
+
+    # Final sort
     messages.sort(key=lambda message: message['ts'])
 
     return messages
