@@ -1,4 +1,3 @@
-from slacker import Slacker
 import json
 import argparse
 import os
@@ -7,26 +6,23 @@ from datetime import datetime
 from pick import pick
 from time import sleep
 
+from slack_bolt import App
 
-# fetches the complete message history for a channel/group/im
+
+# Fetches the complete message history for a channel/group/im
 #
-# pageableObject could be:
-# slack.channel
-# slack.groups
-# slack.im
-#
-# channelId is the id of the channel/group/im you want to download history for.
-def getHistory(pageableObject, channelId, pageSize=100):
+# 'channelId' is the id of the channel/group/im you want to download history for.
+def getHistory(client, channelId, pageSize=100):
     messages = []
     lastTimestamp = None
 
     while True:
-        response = pageableObject.history(
+        response = client.conversations_history(
             channel=channelId,
             latest=lastTimestamp,
             oldest=0,
             count=pageSize
-        ).body
+        )
 
         messages.extend(response['messages'])
 
@@ -137,7 +133,7 @@ def fetchPublicChannels(channels):
         print(u"Fetching history for Public Channel: {0}".format(channelDir))
         channelDir = channel['name'].encode('utf-8')
         mkdir(channelDir)
-        messages = getHistory(slack.channels, channel['id'])
+        messages = getHistory(slack.client, channel['id'])
         parseMessages(channelDir, messages, 'channel')
 
 
@@ -195,7 +191,7 @@ def fetchDirectMessages(dms):
         print(u"Fetching 1:1 DMs with {0}".format(name))
         dmId = dm['id']
         mkdir(dmId)
-        messages = getHistory(slack.im, dm['id'])
+        messages = getHistory(slack.client, dm['id'])
         parseMessages(dmId, messages, "im")
 
 
@@ -220,7 +216,7 @@ def fetchGroups(groups):
         groupDir = group['name']
         mkdir(groupDir)
         print(u"Fetching history for Private Channel / Group DM: {0}".format(group['name']))
-        messages = getHistory(slack.groups, group['id'])
+        messages = getHistory(slack.client, group['id'])
         parseMessages(groupDir, messages, 'group')
 
 
@@ -241,7 +237,7 @@ def dumpUserFile():
 
 # get basic info about the slack channel to ensure the authentication token works
 def doTestAuth():
-    testAuth = slack.auth.test().body
+    testAuth = slack.client.auth_test()
     teamName = testAuth['team']
     currentUser = testAuth['user']
     print(u"Successfully authenticated for team {0} and user {1} ".format(teamName, currentUser))
@@ -251,19 +247,19 @@ def doTestAuth():
 # Since Slacker does not Cache.. populate some reused lists
 def bootstrapKeyValues():
     global users, channels, groups, dms
-    users = slack.users.list().body['members']
+    users = slack.client.users_list()['members']
     print(u"Found {0} Users".format(len(users)))
     sleep(1)
 
-    channels = slack.channels.list().body['channels']
+    channels = slack.client.conversations_list(types='public_channel')['channels']
     print(u"Found {0} Public Channels".format(len(channels)))
     sleep(1)
 
-    groups = slack.groups.list().body['groups']
+    groups = slack.client.conversations_list(types='private_channel, mpim')['channels']
     print(u"Found {0} Private Channels or Group DMs".format(len(groups)))
     sleep(1)
 
-    dms = slack.im.list().body['ims']
+    dms = slack.client.conversations_list(types='im')['channels']
     print(u"Found {0} 1:1 DM conversations\n".format(len(dms)))
     sleep(1)
 
@@ -273,7 +269,7 @@ def bootstrapKeyValues():
 # Returns the conversations to download based on the command-line arguments
 def selectConversations(allConversations, commandLineArg, filter, prompt):
     global args
-    if isinstance(commandLineArg, list) and len(commandLineArg) > 0:
+    if isinstance(commandLineArg, list) and (len(commandLineArg) > 0):
         return filter(allConversations, commandLineArg)
     elif (commandLineArg is not None) or (not anyConversationsSpecified()):
         if args.prompt:
@@ -356,7 +352,7 @@ if __name__ == "__main__":
     userNamesById = {}
     userIdsByName = {}
 
-    slack = Slacker(args.token)
+    slack = App()  # Slack Bolt App object
     testAuth = doTestAuth()
     tokenOwnerId = testAuth['user_id']
 
