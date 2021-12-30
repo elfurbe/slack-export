@@ -101,13 +101,14 @@ def parseMessages(roomDir, messages, roomType):
 
         # check if current message is a name change
         # dms won't have name change events
-        if roomType != "im" and ('subtype' in message) and message['subtype'] == nameChangeFlag:
+        if (roomType != "im") and ('subtype' in message) and (message['subtype'] == nameChangeFlag):
             roomDir = message['name']
             oldRoomPath = message['old_name']
             newRoomPath = roomDir
             channelRename(oldRoomPath, newRoomPath)
 
         currentMessages.append(message)
+
     outFileName = u'{room}/{file}.json'.format(room=roomDir, file=currentFileDate)
     writeMessageFile(outFileName, currentMessages)
 
@@ -218,7 +219,6 @@ def fetchGroups(groups):
     for group in groups:
         groupDir = group['name']
         mkdir(groupDir)
-        messages = []
         print(u"Fetching history for Private Channel / Group DM: {0}".format(group['name']))
         messages = getHistory(slack.groups, group['id'])
         parseMessages(groupDir, messages, 'group')
@@ -275,7 +275,7 @@ def selectConversations(allConversations, commandLineArg, filter, prompt):
     global args
     if isinstance(commandLineArg, list) and len(commandLineArg) > 0:
         return filter(allConversations, commandLineArg)
-    elif commandLineArg != None or not anyConversationsSpecified():
+    elif (commandLineArg is not None) or (not anyConversationsSpecified()):
         if args.prompt:
             return prompt(allConversations)
         else:
@@ -287,7 +287,7 @@ def selectConversations(allConversations, commandLineArg, filter, prompt):
 # Returns true if any conversations were specified on the command line
 def anyConversationsSpecified():
     global args
-    return args.publicChannels != None or args.groups != None or args.directMessages != None
+    return (args.publicChannels is not None) or (args.groups is not None) or (args.directMessages is not None)
 
 
 # This method is used in order to create a empty Channel if you do not export public channels
