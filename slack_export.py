@@ -22,7 +22,7 @@ def getHistory(client, channelId, pageSize=100):
             channel=channelId,
             latest=lastTimestamp,
             oldest=0,
-            count=pageSize
+            limit=pageSize
         )
 
         messages.extend(response['messages'])
@@ -46,7 +46,7 @@ def getHistory(client, channelId, pageSize=100):
                     channel=channelId,
                     latest=lastTimestamp,
                     oldest=0,
-                    count=pageSize,
+                    limit=pageSize,
                     ts=message['ts']
                 )
 
