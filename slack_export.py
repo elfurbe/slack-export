@@ -29,14 +29,17 @@ def getHistory(client, channelId, pageSize=100):
         messages.extend(response['messages'])
 
         if response['has_more']:
+            print(u"Message count: {0}".format(len(messages)),end="\r")
             lastTimestamp = messages[-1]['ts']  # -1 means last element in a list
         else:
+            print(u"Total message count: {0}".format(len(messages)))
             break
 
     messages.sort(key=lambda message: message['ts'])
 
     # Expand threads
     all_replies = []
+    total_replies = 0
     for message in messages:
         if ('reply_count' in message) and (message['reply_count'] > 0):
             lastTimestamp = None
@@ -66,6 +69,9 @@ def getHistory(client, channelId, pageSize=100):
                     continue
                 all_replies.append(reply)
             message['replies'] = copy.deepcopy(replies_array)
+            total_replies = total_replies + len(all_replies)
+            print(u"Thread replies: {0}".format(total_replies),end="\r")
+    print(u"Total thread replies: {0}".format(total_replies))
     messages.extend(all_replies)
 
     # Final sort
