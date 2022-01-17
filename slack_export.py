@@ -24,12 +24,12 @@ def getHistory(client, channelId, pageSize=100):
             oldest=0,
             limit=pageSize
         )
+        sleep(1)  # Respect the Slack API rate limit
 
         messages.extend(response['messages'])
 
         if response['has_more']:
             lastTimestamp = messages[-1]['ts']  # -1 means last element in a list
-            sleep(1)  # Respect the Slack API rate limit
         else:
             break
 
@@ -49,12 +49,12 @@ def getHistory(client, channelId, pageSize=100):
                     limit=pageSize,
                     ts=message['ts']
                 )
+                sleep(1)  # Respect the Slack API rate limit
 
                 replies.extend(response['messages'])
 
                 if response['has_more']:
                     lastTimestamp = messages[-1]['ts']  # -1 means last element in a list
-                    sleep(1)  # Respect the Slack API rate limit
                 else:
                     break
 
