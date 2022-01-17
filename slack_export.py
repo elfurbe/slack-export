@@ -395,7 +395,7 @@ if __name__ == "__main__":
     userNamesById = {}
     userIdsByName = {}
 
-    slack = App()  # Slack Bolt App object
+    slack = App(token=args.token)  # Slack Bolt App object
     testAuth = doTestAuth()
     tokenOwnerId = testAuth['user_id']
 
